@@ -77,35 +77,36 @@ const GisInfoSchema = new mongoose.Schema ({
   title: String,
   surveyNumber: String,
   lotNumber: String,
-  owner: String,
-  coordinates: [String]
-
-
+  ownerName: String,
+  coordinates: [[Number]], // An array of arrays containing latitude and longitude pairs
 });
-
 
 const GisInfo = mongoose.model("GisInfo", GisInfoSchema);
 
+
 app.get("/GisDetail", function(req, res){
-  GisInfo.find().then((GisInfo) => {
-        res.send(GisInfo)
-    });
+  GisInfo.find().then((gisDetails) => {
+    res.send(gisDetails);
+  });
 });
 
+app.post("/GisDetail", async function(req, res){
+  try {
+    const gisInfo = new GisInfo({
+      title: req.body.title,
+      surveyNumber: req.body.surveyNumber,
+      lotNumber: req.body.lotNumber,
+      ownerName: req.body.ownerName,
+      coordinates: req.body.coordinates,
+    });
 
-app.post("/GisDetail", function(req, res){
-const gisInfo = new Gis({ 
-    title: req.body.title,
-    surveyNumber: req.body.surveyNumber,
-    lotNumber: req.body.lotNumber,
-    owner: req.body.owner,
-    coordinates: req.body.coordinates
-  });
-
-  gisInfo.save().then(() => console.log('Lot Saved'));
-  res.send({ status: "ok" });
-
-
+    await gisInfo.save();
+    console.log('GIS Details Saved');
+    res.json({ status: "ok" });
+  } catch (error) {
+    console.error('Error saving GIS details:', error);
+    res.status(500).json({ status: "error" });
+  }
 });
 
 
