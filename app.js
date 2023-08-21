@@ -74,11 +74,8 @@ app.post("/userLogin", async (req, res) => {
   
 //For GISDetails
 const GisInfoSchema = new mongoose.Schema ({
-  title: String,
-  surveyNumber: String,
-  lotNumber: String,
-  ownerName: String,
-  coordinates: [[Number]], // An array of arrays containing latitude and longitude pairs
+  geojson: Object,
+
 });
 
 const GisInfo = mongoose.model("GisInfo", GisInfoSchema);
@@ -87,17 +84,20 @@ const GisInfo = mongoose.model("GisInfo", GisInfoSchema);
 app.get("/GisDetail", function(req, res){
   GisInfo.find().then((gisDetails) => {
     res.send(gisDetails);
+
   });
 });
 
 app.post("/GisDetail", async function(req, res){
   try {
+    console.log('Received request body:', req.body);
+
+    const geojsonValue = req.body.geojson; 
+    console.log('GeoJSON value:', geojsonValue); 
+    
+
     const gisInfo = new GisInfo({
-      title: req.body.title,
-      surveyNumber: req.body.surveyNumber,
-      lotNumber: req.body.lotNumber,
-      ownerName: req.body.ownerName,
-      coordinates: req.body.coordinates,
+      geojson: JSON.parse(geojsonValue),
     });
 
     await gisInfo.save();
