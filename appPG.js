@@ -114,7 +114,7 @@ app.get("/GisDetail", async function(req, res){
   }
 });
 
-
+//Get GIS Form
 app.post("/GisDetail", async function(req, res){
   try {
     console.log('Received request body:', req.body);
@@ -131,7 +131,7 @@ app.post("/GisDetail", async function(req, res){
     } = req.body;
 
     await pool.query(
-      'INSERT INTO gis_information (title, surveynumber, lotnumber, blknumber, area, ownername, pluscode, geojson) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+      'INSERT INTO gis_information (title, surveynumber, lotnumber, blknumber, area, ownername, pluscode, geojson) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [title, surveyNumber, lotNumber, blkNumber, area, ownerName, plusCode, geojson]
     );
 
