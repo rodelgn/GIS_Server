@@ -28,7 +28,7 @@ pool.connect ((err, client, done) => {
     }
    
 });
-//Console log Users Details
+
 pool.query (`Select * from users`, (err, res) => {
     if(!err) {
         console.log(res.rows);
@@ -37,7 +37,7 @@ pool.query (`Select * from users`, (err, res) => {
     }
     pool.end;
 });
-//Console log GIS Details
+
 pool.query (`Select * from gis_information`, (err, res) => {
   if(!err) {
       console.log(res.rows);
@@ -47,7 +47,6 @@ pool.query (`Select * from gis_information`, (err, res) => {
   pool.end;
 });
 
-//User Details
 
 app.get('/userDetail', (req, res) => {
     pool.query('SELECT * FROM users', (err, result) => {
@@ -61,7 +60,7 @@ app.get('/userDetail', (req, res) => {
   });
   
 
-//Create User
+
 app.post('/userDetail', (req, res) => {
     const { email, password } = req.body;
     const insertQuery = 'INSERT INTO users (email, password) VALUES ($1, $2)';
@@ -78,9 +77,7 @@ app.post('/userDetail', (req, res) => {
     });
   });
 
-//End User Detail
 
-//User Login
   app.post('/userLogin', (req, res) => {
     const { email, password } = req.body;
     const selectQuery = 'SELECT * FROM users WHERE email = $1 AND password = $2';
@@ -100,9 +97,6 @@ app.post('/userDetail', (req, res) => {
     });
   });
 
-//End User Login
-
-//GIS INFO
 
 app.get("/GisDetail", async function(req, res){
   try {
@@ -114,7 +108,7 @@ app.get("/GisDetail", async function(req, res){
   }
 });
 
-//Get GIS Form
+
 app.post("/GisDetail", async function(req, res){
   try {
     console.log('Received request body:', req.body);
@@ -143,7 +137,6 @@ app.post("/GisDetail", async function(req, res){
   }
 });
 
-//End of GIS Information
 
 app.listen(5000, function() {
     console.log("Server started on port 5000");
