@@ -41,7 +41,8 @@ async function createTables() {
               id SERIAL PRIMARY KEY,
               name VARCHAR(255) NOT NULL,
               email VARCHAR(255) NOT NULL,
-              password VARCHAR(255) NOT NULL
+              password VARCHAR(255) NOT NULL,
+              role VARCHAR(255)
           );
       `);
 
@@ -123,15 +124,15 @@ app.get('/userDetail', (req, res) => {
 
 //Create User
 app.post('/userDetail', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
   try {
    
     const hashedPassword = await bcrypt.hash(password, 10);
 
  
-    const insertQuery = 'INSERT INTO users (name, email, password) VALUES ($1, $2, $3)';
-    const values = [name, email, hashedPassword];
+    const insertQuery = 'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)';
+    const values = [name, email, hashedPassword, role];
 
     await pool.query(insertQuery, values);
     console.log('User saved');
@@ -143,34 +144,43 @@ app.post('/userDetail', async (req, res) => {
 });
 
 //User Login
-  app.post('/userLogin', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const selectQuery = 'SELECT * FROM users WHERE email = $1';
-      const values = [email];
-  
-      const result = await pool.query(selectQuery, values);
-  
-      if (result.rowCount === 1) {
-        const user = result.rows[0];
-        // Compare the provided password with the stored hashed password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-  
-        if (isPasswordValid) {
-          // Generate a JWT with user information
-          const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET);
-          res.json({ status: 'ok', message: 'Login successful', token });
-        } else {
-          res.json({ status: 'error', message: 'Invalid email or password' });
-        }
+app.post('/userLogin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const selectQuery = 'SELECT * FROM users WHERE email = $1';
+    const values = [email];
+
+    const result = await pool.query(selectQuery, values);
+
+    if (result.rowCount === 1) {
+      const user = result.rows[0];
+      // Compare the provided password with the stored hashed password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (isPasswordValid) {
+        // Generate a JWT with user information
+        const token = jwt.sign(
+          { userId: user.id, name: user.name, email: user.email, role: user.role },
+          JWT_SECRET
+        );
+        res.json({
+          status: 'ok',
+          message: 'Login successful',
+          token,
+          user: { id: user.id, name: user.name, email: user.email, role: user.role }, 
+        });
       } else {
         res.json({ status: 'error', message: 'Invalid email or password' });
       }
-    } catch (error) {
-      console.error('Error during login:', error);
-      res.status(500).json({ status: 'error', message: 'Internal server error' });
+    } else {
+      res.json({ status: 'error', message: 'Invalid email or password' });
     }
-  });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
+  }
+});
+
 
 
 //GIS INFO
