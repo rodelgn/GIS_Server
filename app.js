@@ -70,6 +70,40 @@ async function createTables() {
               status VARCHAR(255)
           );
       `);
+            // Create the 'Taxmapping' table if it doesn't exist
+            await pool.query(`
+            CREATE TABLE IF NOT EXISTS rptas_table (
+                id SERIAL PRIMARY KEY,
+                Pin VARCHAR(255),
+                pluscode VARCHAR(255),
+                title VARCHAR(255),
+                titledate VARCHAR(255),
+                surveynumber VARCHAR(255),
+                lotnumber VARCHAR(255),
+                blknumber VARCHAR(255),
+                area VARCHAR(255),
+                boundary VARCHAR(255),
+                ownername VARCHAR(255),
+                oct VARCHAR(255),
+                octdate VARCHAR(255),
+                prevtct VARCHAR(255),
+                tctdate VARCHAR(255),        
+                status VARCHAR(255)
+            );
+        `);
+
+        // Create the 'brgycode' table if it doesn't exist
+        await pool.query(`
+        CREATE TABLE IF NOT EXISTS brgy_code (
+            id SERIAL PRIMARY KEY,
+            brgycode VARCHAR(255),
+            brgycodelast3 VARCHAR(255),
+            brgy VARCHAR(255),
+            districtcode VARCHAR(255),
+            admindistrict VARCHAR(255),
+            poldistrict VARCHAR(255)
+        );
+    `);
             // Create the 'monuments' table if it doesn't exist
             await pool.query(`
             CREATE TABLE IF NOT EXISTS monuments (
@@ -184,8 +218,6 @@ app.post('/userLogin', async (req, res) => {
 
 
 //GIS INFO
-
-
 app.get("/GisDetail", async function(req, res){
   try {
       const { rows } = await pool.query('SELECT * FROM title_table');
@@ -380,8 +412,6 @@ app.put("/updateTitle/:id", async (req, res) => {
   `;
 
 
-    // Execute the update query
-    // Execute the update query
     await pool.query(updateQuery, [
       title,
       titleDate,
@@ -419,6 +449,69 @@ app.get("/monuments", async function(req, res){
       res.status(500).json({ status: "error" });
   }
 });
+
+
+//RPTAS_Table
+
+app.get("/tmod", async function(req, res){
+  try {
+      const { rows } = await pool.query('SELECT * FROM rptas_table');
+      res.json(rows);
+  } catch (error) {
+      console.error('Error fetching rptas_table:', error);
+      res.status(500).json({ status: "error" });
+  }
+});
+
+app.post("/tmod", async function(req, res){
+  try {
+    console.log('Received request body:', req.body);
+
+    const {
+      pin,
+      plusCode,
+      title,
+      titleDate,
+      surveyNumber,
+      lotNumber,
+      blkNumber,
+      area,
+      boundary,
+      ownerName,
+      oct,
+      octDate,
+      tct,
+      tctDate,
+      status,
+     
+    } = req.body;
+
+    await pool.query(
+      'INSERT INTO rptas_table (pin, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
+  [pin, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
+    );
+
+    console.log('PIN SAVED');
+    res.json({ status: "ok" });
+  } catch (error) {
+    console.error('Error saving PIN:', error);
+    res.status(500).json({ status: "error" });
+  }
+});
+
+
+
+//List of brgycode
+app.get("/brgycode", async function(req, res){
+  try {
+      const { rows } = await pool.query('SELECT * FROM brgy_code');
+      res.json(rows);
+  } catch (error) {
+      console.error('Error fetching brgy_code:', error);
+      res.status(500).json({ status: "error" });
+  }
+});
+
 
 
 
