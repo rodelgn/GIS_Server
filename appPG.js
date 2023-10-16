@@ -26,26 +26,25 @@ pool.connect ((err, client, done) => {
     } else {
         console.log('Connected to PostgreSQL');
     }
-   
 });
 
-pool.query (`Select * from users`, (err, res) => {
-    if(!err) {
-        console.log(res.rows);
-    } else {
-        console.log(err.message);
-    }
-    pool.end;
-});
+// pool.query (`Select * from users`, (err, res) => {
+//     if(!err) {
+//         console.log(res.rows);
+//     } else {
+//         console.log(err.message);
+//     }
+//     pool.end;
+// });
 
-pool.query (`Select * from gis_information`, (err, res) => {
-  if(!err) {
-      console.log(res.rows);
-  } else {
-      console.log(err.message);
-  }
-  pool.end;
-});
+// pool.query (`Select * from gis_information`, (err, res) => {
+//   if(!err) {
+//       console.log(res.rows);
+//   } else {
+//       console.log(err.message);
+//   }
+//   pool.end;
+// });
 
 
 app.get('/userDetail', (req, res) => {
@@ -109,7 +108,7 @@ app.get("/GisDetail", async function(req, res){
 });
 
 
-app.post("/GisDetail", async function(req, res){
+app.post("/GisDetail", async function(req, res) {
   try {
     console.log('Received request body:', req.body);
 
@@ -137,8 +136,89 @@ app.post("/GisDetail", async function(req, res){
   }
 });
 
+//KML File Table
+// app.get("/kmlDetails", async function(req, res){
+//   try {
+//       const { rows } = await pool.query('SELECT * FROM kml_data');
+//       res.json(rows);
+//   } catch (error) {
+//       console.error('Error fetching KML details:', error);
+//       res.status(500).json({ status: "error" });
+//   }
+// });
+
+// app.post("/kmlDetails", async function(req, res) {
+//   try {
+//     console.log('Received request body:', req.body);
+
+//     const {
+//       id,
+//       applicant,
+//       area,
+//       blk_no,
+//       date_enact,
+//       date_pass,
+//       lot_no,
+//       map_no,
+//       ord_no,
+//       owner,
+//       plot_edit,
+//       plotted_ba,
+//       projtype,
+//       purpose,
+//       res_no,
+//       surv_no,
+//       t_date,
+//       title_no,
+//       zone_class,
+//       plotted_by,
+//       pgplot_by,
+//       date_time,
+//       coordinate,
+//       centroid,
+//       pluscode,
+//     } = req.body;
+
+//     await pool.query(
+//       'INSERT INTO kml_data (id, applicant, area, blk_no, date_enact, date_pass, lot_no, map_no, ord_no, owner, plot_edit, plotted_ba, projtype, purpose, res_no, surv_no, t_date, title_no, zone_class, plotted_by, pgplot_by, date_time, coordinate, centroid, pluscode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)',
+//       [id,
+//         applicant,
+//         area,
+//         blk_no,
+//         date_enact,
+//         date_pass,
+//         lot_no,
+//         map_no,
+//         ord_no,
+//         owner,
+//         plot_edit,
+//         plotted_ba,
+//         projtype,
+//         purpose,
+//         res_no,
+//         surv_no,
+//         t_date,
+//         title_no,
+//         zone_class,
+//         plotted_by,
+//         pgplot_by,
+//         date_time,
+//         coordinate,
+//         centroid,
+//         pluscode,]
+//     );
+
+//     console.log('KML Details Saved');
+//     res.json({ status: "ok" });
+//   } catch (error) {
+//     console.error('Error saving KML details:', error);
+//     res.status(500).json({ status: "error" });
+//   }
+// });
+
 
 app.listen(5000, function() {
     console.log("Server started on port 5000");
   });
+  
   
