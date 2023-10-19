@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Client } = require('pg');
 const express = require('express');
 const bodyParser = require("body-parser");
@@ -12,8 +13,8 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET =
-  "hvdvay6ert72839289()aiyg8t87qt72393293883uhefiuh78ttq3ifi78272jbkj?[]]pou89ywe";
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const pool = new Client ({
     user: 'postgres',
@@ -66,7 +67,7 @@ async function createTables() {
               technicaldescremarks VARCHAR(255),
               pluscode VARCHAR(255),
               geojson JSON,
-              the_geom GEOMETRY,
+              the_geom GEOMETRY(Polygon, 4326),
               status VARCHAR(255)
           );
       `);
@@ -232,6 +233,7 @@ app.get("/GisDetail", async function(req, res){
 app.post("/GisDetail", async function(req, res){
   try {
     console.log('Received request body:', req.body);
+ 
 
     const {
       title,
@@ -254,9 +256,12 @@ app.post("/GisDetail", async function(req, res){
      
     } = req.body;
 
+    const geojsonFormat = JSON.parse(geojson);
+    const geoType = geojsonFormat.geometry.type;
+    const coordinates = geojsonFormat.geometry.coordinates;
     await pool.query(
-      'INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
-  [title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, technicalDescription,  technicaldescremarks, plusCode, geojson, status]
+      'INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, the_geom, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, ST_SetSRID(ST_GeomFromGeoJSON($17), 4326), $18)',
+  [title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, technicalDescription,  technicaldescremarks, plusCode, JSON.stringify(geojsonFormat), JSON.stringify({ type: geoType, coordinates }), status]
     );
 
     console.log('GIS Details Saved');
@@ -407,7 +412,6 @@ app.put("/updateTitle/:id", async (req, res) => {
       technicaldescremarks = $12,
       plusCode = $13,
       geojson = $14
-      status
     WHERE id = $15
   `;
 
@@ -427,8 +431,8 @@ app.put("/updateTitle/:id", async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
-      status,
-      id, // Pass the 'id' from the URL parameter as the last parameter
+
+      id, 
     ]);
 
     console.log('Title field updated successfully');
@@ -499,7 +503,21 @@ app.post("/tmod", async function(req, res){
   }
 });
 
+app.get('/checkPin/:pin', async (req, res) => {
+  try {
+    const { pin } = req.params;
 
+    const query = 'SELECT EXISTS (SELECT 1 FROM rptas_table WHERE pin = $1)';
+
+    const result = await pool.query(query, [pin]);
+    const exists = result.rows[0].exists;
+
+    res.json({ exists });
+  } catch (error) {
+    console.error('Error checking PIN:', error);
+    res.status(500).json({ exists: false });
+  }
+});
 
 //List of brgycode
 app.get("/brgycode", async function(req, res){
