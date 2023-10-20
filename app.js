@@ -519,6 +519,31 @@ app.get('/checkPin/:pin', async (req, res) => {
   }
 });
 
+
+app.put('/approvedpin/:pin', async (req, res) => {
+  try {
+    console.log('Received request body:', req.body);
+    const { pin } = req.params;
+    const { status } = req.body;
+
+    // Define the SQL query to update the 'status' field in rptas_table
+    const updateQuery = `
+      UPDATE rptas_table
+      SET status = $1
+      WHERE pin = $2
+    `;
+
+    // Execute the update query for rptas_table
+    await pool.query(updateQuery, [status, pin]);
+
+    console.log('Status field in rptas_table updated successfully');
+    res.json({ status: 'ok', message: 'Status field in rptas_table updated successfully' });
+  } catch (error) {
+    console.error('Error updating status field in rptas_table:', error);
+    res.status(500).json({ status: 'error', message: 'Error updating status field in rptas_table' });
+  }
+});
+
 //List of brgycode
 app.get("/brgycode", async function(req, res){
   try {
