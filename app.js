@@ -13,9 +13,35 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 const jwt = require('jsonwebtoken');
 
-
 const JWT_SECRET = process.env.JWT_SECRET;
 
+
+// Function to generate a JWT token
+function generateToken(user) {
+  // You can include user data in the token payload
+  const payload = {
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  const token = jwt.sign(payload, JWT_SECRET);
+
+  return token;
+}
+
+
+// CONNNECTION FOR CLOUD PG
+// const pool = new Client ({
+//   user: 'postgres',
+//   host: '129.150.47.67',
+//   database: 'postgres',
+//   password: 'gismap',
+//   port: 5432,
+// });
+
+//CONNNECTION FOR LOCAL PG
 const pool = new Client ({
     user: 'postgres',
     host: 'localhost',
@@ -68,10 +94,11 @@ async function createTables() {
               pluscode VARCHAR(255),
               geojson JSON,
               the_geom GEOMETRY(Polygon, 4326),
-              status VARCHAR(255)
+              status VARCHAR(255),
+              username VARCHAR(255)
           );
       `);
-            // Create the 'Taxmapping' table if it doesn't exist
+            // Create the 'rptas_table' table if it doesn't exist
             await pool.query(`
             CREATE TABLE IF NOT EXISTS rptas_table (
                 id SERIAL PRIMARY KEY,
@@ -89,7 +116,8 @@ async function createTables() {
                 octdate VARCHAR(255),
                 prevtct VARCHAR(255),
                 tctdate VARCHAR(255),        
-                status VARCHAR(255)
+                status VARCHAR(255),
+                username VARCHAR(255)
             );
         `);
 
@@ -143,22 +171,53 @@ pool.query (`Select * from title_table`, (err, res) => {
   pool.end;
 });
 
+// Define an authentication middleware
+const requireAuth = (req, res, next) => {
+  const token = req.headers.authorization;
+  console.log("Received Token:", token);
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized - Please provide a valid token' });
+  }
+
+// Extract the token from the "Bearer" format
+const tokenParts = token.split(' ');
+const tokenValue = tokenParts[1];
+
+// Verify the token
+jwt.verify(tokenValue, JWT_SECRET, (err,user, decoded) => {
+  if (err) {
+    // Token verification failed
+    console.error('Token Verification Error:', err);
+    return res.status(401).json({ message: 'Unauthorized - Invalid token' });
+  } else {
+    // Token is valid; 'decoded' contains the token payload
+    console.log('Token Payload:', decoded);
+    // Continue processing the request
+  }
+
+   
+    req.user = user;
+    next();
+  });
+};
+
+
 //User Details
 
-app.get('/userDetail', (req, res) => {
-    pool.query('SELECT * FROM users', (err, result) => {
-      if (err) {
-        console.error('Error fetching users:', err);
-        res.status(500).json({ status: 'error' });
-      } else {
-        res.json(result.rows);
-      }
-    });
-  });
-  
+app.get('/userDetail', requireAuth, async function (req, res) {
+  try {
+    const result = await pool.query('SELECT * FROM users');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ status: 'error' });
+  }
+});
+
 
 //Create User
 app.post('/userDetail', async (req, res) => {
+ 
   const { name, email, password, role } = req.body;
 
   try {
@@ -182,53 +241,85 @@ app.post('/userDetail', async (req, res) => {
 app.post('/userLogin', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const selectQuery = 'SELECT * FROM users WHERE email = $1';
-    const values = [email];
 
-    const result = await pool.query(selectQuery, values);
+    // Step 1: Fetch the user from the database using the provided email
+    const user = await getUserByEmail(email);
 
-    if (result.rowCount === 1) {
-      const user = result.rows[0];
-      // Compare the provided password with the stored hashed password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (isPasswordValid) {
-        // Generate a JWT with user information
-        const token = jwt.sign(
-          { userId: user.id, name: user.name, email: user.email, role: user.role },
-          JWT_SECRET
-        );
-        res.json({
-          status: 'ok',
-          message: 'Login successful',
-          token,
-          user: { id: user.id, name: user.name, email: user.email, role: user.role }, 
-        });
-      } else {
-        res.json({ status: 'error', message: 'Invalid email or password' });
-      }
-    } else {
-      res.json({ status: 'error', message: 'Invalid email or password' });
+    if (!user) {
+      console.log("mao ni");
+      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+     
     }
+
+    // Step 2: Validate the provided password with the stored hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      console.log("mao gyud ni");
+      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+    }
+
+    // Step 3: Generate a JWT token with user information
+    const token = generateToken(user);
+
+    // Step 4: Send the token and user details in the response
+    res.json({
+      status: 'ok',
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+       
+      },
+    });
+    console.log(user.id, user.name, user.email, user.role, token);
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 });
 
+// Function to fetch user by email from the database
+async function getUserByEmail(email) {
+  const selectQuery = 'SELECT * FROM users WHERE email = $1';
+  const values = [email];
+
+  const result = await pool.query(selectQuery, values);
+  return result.rows[0];
+}
+
+// Function to generate a JWT token
+function generateToken(user) {
+  const token = jwt.sign(
+    { userId: user.id, name: user.name, email: user.email, role: user.role },
+    JWT_SECRET,
+    {
+      expiresIn: '1h', // Set the token expiration time
+    }
+  );
+  return token;
+}
 
 
-//GIS INFO
-app.get("/GisDetail", async function(req, res){
+
+app.get('/GisDetail',requireAuth, async function(req, res) {
+  const token = req.headers.authorization;
+  console.log("Received Token:", token);
+
   try {
-      const { rows } = await pool.query('SELECT * FROM title_table');
-      res.json(rows);
-  } catch (error) {
-      console.error('Error fetching GIS details:', error);
-      res.status(500).json({ status: "error" });
-  }
-});
 
+    const { rows } = await pool.query('SELECT * FROM title_table');
+    res.json(rows);
+
+  } catch (error) {
+    console.error('Error fetching GIS details:', error);
+    res.status(500).json({ status: 'error' });
+  }
+
+});
 
 app.post("/GisDetail", async function(req, res){
   try {
@@ -457,7 +548,7 @@ app.get("/monuments", async function(req, res){
 
 //RPTAS_Table
 
-app.get("/tmod", async function(req, res){
+app.get("/tmod", requireAuth, async function(req, res){
   try {
       const { rows } = await pool.query('SELECT * FROM rptas_table');
       res.json(rows);
