@@ -467,7 +467,7 @@ app.put('/approved/:title', async (req, res) => {
 
 app.put("/updateTitle/:id", async (req, res) => {
   try {
-    const { id } = req.params; // Extract the 'title' from the URL parameter
+    const { id } = req.params; 
     const { 
       title,
       titleDate,
