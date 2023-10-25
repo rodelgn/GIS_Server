@@ -36,7 +36,7 @@ function generateToken(user) {
 const pool = new Client ({
   user: 'postgres',
   host: '129.150.47.67',
-  database: 'postgress',
+  database: 'postgres',
   password: 'gismap',
   port: 5432,
 });
