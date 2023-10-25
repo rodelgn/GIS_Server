@@ -648,9 +648,8 @@ app.get("/brgycode", async function(req, res){
 
 
 
-let port = process.env.PORT || 5000;
-
-app.listen(port, function() {
-    console.log("Server started on port 5000");
-  });
-  
+// let port = process.env.PORT || 5000;
+// app.listen(port, function() {
+//     console.log("Server started on port 5000");
+//   });
+module.exports = app;
