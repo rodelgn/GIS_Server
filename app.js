@@ -36,12 +36,12 @@ function generateToken(user) {
 const pool = new Client ({
   user: 'postgres',
   host: '129.150.47.67',
-  database: 'postgres',
+  database: 'postgress',
   password: 'gismap',
   port: 5432,
 });
 
-//CONNNECTION FOR LOCAL PG
+//CONNNECTION FOR LOCAL PGr
 // const pool = new Client ({
 //     user: 'postgres',
 //     host: 'localhost',
@@ -344,6 +344,7 @@ app.post("/GisDetail", async function(req, res){
       plusCode,
       geojson,
       status,
+      username,
      
     } = req.body;
 
@@ -351,8 +352,8 @@ app.post("/GisDetail", async function(req, res){
     const geoType = geojsonFormat.geometry.type;
     const coordinates = geojsonFormat.geometry.coordinates;
     await pool.query(
-      'INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, the_geom, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, ST_SetSRID(ST_GeomFromGeoJSON($17), 4326), $18)',
-  [title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, technicalDescription,  technicaldescremarks, plusCode, JSON.stringify(geojsonFormat), JSON.stringify({ type: geoType, coordinates }), status]
+      'INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, the_geom, status, username) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, ST_SetSRID(ST_GeomFromGeoJSON($17), 4326), $18, $19)',
+  [title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, technicalDescription,  technicaldescremarks, plusCode, JSON.stringify(geojsonFormat), JSON.stringify({ type: geoType, coordinates }), status,username]
     );
 
     console.log('GIS Details Saved');
