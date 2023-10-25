@@ -201,6 +201,24 @@ jwt.verify(tokenValue, JWT_SECRET, (err,user, decoded) => {
   });
 };
 
+// Middleware to validate API key
+const validateAPIKey = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+
+  if (!apiKey) {
+  
+    return res.status(401).json({ message: 'Unauthorized - API key is missing' });
+  }
+
+ 
+  if (apiKey === process.env.CLIENT_API_KEY) { // Replace with your stored API key
+    next();
+  } else {
+    console.log(apiKey)
+    console.log(process.env.CLIENT_API_KEY);
+    return res.status(403).json({ message: 'Unauthorized - Invalid API key' });
+  }
+};
 
 //User Details
 
@@ -297,7 +315,7 @@ function generateToken(user) {
     { userId: user.id, name: user.name, email: user.email, role: user.role },
     JWT_SECRET,
     {
-      expiresIn: '1h', // Set the token expiration time
+      expiresIn: '7d', 
     }
   );
   return token;
@@ -549,7 +567,7 @@ app.get("/monuments", async function(req, res){
 
 //RPTAS_Table
 
-app.get("/tmod", requireAuth, async function(req, res){
+app.get("/tmod", validateAPIKey, async function(req, res){
   try {
       const { rows } = await pool.query('SELECT * FROM rptas_table');
       res.json(rows);
