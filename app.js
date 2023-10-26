@@ -33,22 +33,22 @@ function generateToken(user) {
 
 
 // CONNNECTION FOR CLOUD PG
-// const pool = new Client ({
-//   user: 'postgres',
-//   host: '129.150.47.67',
-//   database: 'postgres',
-//   password: 'gismap',
-//   port: 5432,
-// });
+const pool = new Client ({
+  user: 'postgres',
+  host: '129.150.47.67',
+  database: 'postgres',
+  password: 'gismap',
+  port: 5432,
+});
 
 //CONNNECTION FOR LOCAL PGr
-const pool = new Client ({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'gis_db',
-    password: 'dinesdayrit',
-    port: 5432,
-});
+// const pool = new Client ({
+//     user: 'postgres',
+//     host: 'localhost',
+//     database: 'gis_db',
+//     password: 'dinesdayrit',
+//     port: 5432,
+// });
 
 pool.connect ((err, client, done) => {
     if (err) {
