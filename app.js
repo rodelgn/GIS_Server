@@ -33,22 +33,22 @@ function generateToken(user) {
 
 
 // CONNNECTION FOR CLOUD PG
-const pool = new Client ({
-  user: 'postgres',
-  host: '129.150.47.67',
-  database: 'postgres',
-  password: 'gismap',
-  port: 5432,
-});
+// const pool = new Client ({
+//   user: 'postgres',
+//   host: '129.150.47.67',
+//   database: 'postgres',
+//   password: 'gismap',
+//   port: 5432,
+// });
 
 //CONNNECTION FOR LOCAL PGr
-// const pool = new Client ({
-//     user: 'postgres',
-//     host: 'localhost',
-//     database: 'gis_db',
-//     password: 'dinesdayrit',
-//     port: 5432,
-// });
+const pool = new Client ({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'gis_db',
+    password: 'dinesdayrit',
+    port: 5432,
+});
 
 pool.connect ((err, client, done) => {
     if (err) {
@@ -234,7 +234,7 @@ app.get('/userDetail', requireAuth, async function (req, res) {
 
 
 //Create User
-app.post('/userDetail', async (req, res) => {
+app.post('/userDetail',requireAuth, async (req, res) => {
  
   const { name, email, password, role } = req.body;
 
@@ -339,7 +339,7 @@ app.get('/GisDetail',requireAuth, async function(req, res) {
 
 });
 
-app.post("/GisDetail", async function(req, res){
+app.post("/GisDetail",requireAuth, async function(req, res){
   try {
     console.log('Received request body:', req.body);
  
@@ -383,7 +383,7 @@ app.post("/GisDetail", async function(req, res){
 });
 
 //Update Data
-app.put('/GisDetail/:title', async (req, res) => {
+app.put('/GisDetail/:title',requireAuth, async (req, res) => {
   try {
 
     console.log('Received request body:', req.body);
@@ -577,7 +577,7 @@ app.get("/tmod", validateAPIKey, async function(req, res){
   }
 });
 
-app.post("/tmod", async function(req, res){
+app.post("/tmod",requireAuth, async function(req, res){
   try {
     console.log('Received request body:', req.body);
 
