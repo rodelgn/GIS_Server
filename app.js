@@ -33,22 +33,22 @@ function generateToken(user) {
 
 
 // CONNNECTION FOR CLOUD PG
-const pool = new Client ({
-  user: 'postgres',
-  host: '129.150.47.67',
-  database: 'postgres',
-  password: 'gismap',
-  port: 5432,
-});
+// const pool = new Client ({
+//   user: 'postgres',
+//   host: '129.150.47.67',
+//   database: 'postgres',
+//   password: 'gismap',
+//   port: 5432,
+// });
 
 //CONNNECTION FOR LOCAL PGr
-// const pool = new Client ({
-//     user: 'postgres',
-//     host: 'localhost',
-//     database: 'gis_db',
-//     password: 'dinesdayrit',
-//     port: 5432,
-// });
+const pool = new Client ({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'gis_db',
+    password: 'dinesdayrit',
+    port: 5432,
+});
 
 pool.connect ((err, client, done) => {
     if (err) {
@@ -77,46 +77,46 @@ async function createTables() {
       await pool.query(`
           CREATE TABLE IF NOT EXISTS title_table (
               id SERIAL PRIMARY KEY,
-              title VARCHAR(255),
-              titledate VARCHAR(255),
-              surveynumber VARCHAR(255),
-              lotnumber VARCHAR(255),
-              blknumber VARCHAR(255),
-              area VARCHAR(255),
-              boundary VARCHAR(255),
-              ownername VARCHAR(255),
-              oct VARCHAR(255),
-              octdate VARCHAR(255),
-              prevtct VARCHAR(255),
-              tctdate VARCHAR(255),
-              tecnicaldescription VARCHAR(255),
-              technicaldescremarks VARCHAR(255),
-              pluscode VARCHAR(255),
+              title VARCHAR,
+              titledate VARCHAR,
+              surveynumber VARCHAR,
+              lotnumber VARCHAR,
+              blknumber VARCHAR,
+              area VARCHAR,
+              boundary VARCHAR,
+              ownername VARCHAR,
+              oct VARCHAR,
+              octdate VARCHAR,
+              prevtct VARCHAR,
+              tctdate VARCHAR,
+              tecnicaldescription VARCHAR,
+              technicaldescremarks VARCHAR,
+              pluscode VARCHAR,
               geojson JSON,
               the_geom GEOMETRY(Polygon, 4326),
-              status VARCHAR(255),
-              username VARCHAR(255)
+              status VARCHAR,
+              username VARCHAR
           );
       `);
             // Create the 'rptas_table' table if it doesn't exist
             await pool.query(`
             CREATE TABLE IF NOT EXISTS rptas_table (
                 id SERIAL PRIMARY KEY,
-                Pin VARCHAR(255),
-                pluscode VARCHAR(255),
-                title VARCHAR(255),
-                titledate VARCHAR(255),
-                surveynumber VARCHAR(255),
-                lotnumber VARCHAR(255),
-                blknumber VARCHAR(255),
-                area VARCHAR(255),
-                boundary VARCHAR(255),
-                ownername VARCHAR(255),
-                oct VARCHAR(255),
-                octdate VARCHAR(255),
-                prevtct VARCHAR(255),
-                tctdate VARCHAR(255),        
-                status VARCHAR(255),
+                Pin VARCHAR,
+                pluscode VARCHAR,
+                title VARCHAR,
+                titledate VARCHAR,
+                surveynumber VARCHAR,
+                lotnumber VARCHAR,
+                blknumber VARCHAR,
+                area VARCHAR,
+                boundary VARCHAR,
+                ownername VARCHAR,
+                oct VARCHAR,
+                octdate VARCHAR,
+                prevtct VARCHAR,
+                tctdate VARCHAR,        
+                status VARCHAR,
                 username VARCHAR(255)
             );
         `);
@@ -653,6 +653,31 @@ app.put('/approvedpin/:pin', async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Error updating status field in rptas_table' });
   }
 });
+
+app.delete('/deleteByTitle/:title',requireAuth, async (req, res) => {
+  try {
+    const { title } = req.params;
+
+   
+    const deleteQuery = 'DELETE FROM rptas_table WHERE title = $1';
+
+  
+    const result = await pool.query(deleteQuery, [title]);
+
+   
+    if (result.rowCount === 1) {
+      console.log(`Record with title '${title}' deleted successfully`);
+      res.json({ status: 'ok', message: `Record with title '${title}' deleted successfully` });
+    } else {
+      console.log(`No record found with title '${title}'`);
+      res.status(404).json({ status: 'not found', message: `No record found with title '${title}'` });
+    }
+  } catch (error) {
+    console.error('Error deleting record by title:', error);
+    res.status(500).json({ status: 'error', message: 'Error deleting record by title' });
+  }
+});
+
 
 //List of brgycode
 app.get("/brgycode", async function(req, res){
