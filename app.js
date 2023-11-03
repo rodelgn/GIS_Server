@@ -103,6 +103,10 @@ async function createTables() {
             CREATE TABLE IF NOT EXISTS rptas_table (
                 id SERIAL PRIMARY KEY,
                 Pin VARCHAR,
+                districtcode VARCHAR,
+                brgycode VARCHAR,
+                sectioncode VARCHAR,
+                parcelid VARCHAR,
                 pluscode VARCHAR,
                 title VARCHAR,
                 titledate VARCHAR,
@@ -583,6 +587,10 @@ app.post("/tmod",requireAuth, async function(req, res){
 
     const {
       pin,
+      districtCode,
+      brgyCode,
+      sectionCode,
+      parcelCode,
       plusCode,
       title,
       titleDate,
@@ -601,8 +609,8 @@ app.post("/tmod",requireAuth, async function(req, res){
     } = req.body;
 
     await pool.query(
-      'INSERT INTO rptas_table (pin, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
-  [pin, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
+      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)',
+  [pin, districtCode,brgyCode, sectionCode, parcelCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
     );
 
     console.log('PIN SAVED');
