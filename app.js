@@ -387,12 +387,13 @@ app.post("/GisDetail",requireAuth, async function(req, res){
 });
 
 //Update Data
-app.put('/GisDetail/:title',requireAuth, async (req, res) => {
+app.put('/GisDetail/:id',requireAuth, async (req, res) => {
   try {
 
     console.log('Received request body:', req.body);
-    const { title } = req.params;
+    const { id } = req.params;
     const {
+      title,
       titleDate,
       surveyNumber,
       lotNumber,
@@ -416,26 +417,28 @@ app.put('/GisDetail/:title',requireAuth, async (req, res) => {
     const updateQuery = `
       UPDATE title_table
       SET 
-      titleDate = $1,
-      surveyNumber = $2,     
-      lotNumber = $3,      
-      blkNumber = $4,       
-      area = $5,            
-      boundary = $6,        
-      ownerName = $7,      
-      oct = $8,              
-      octDate = $9,         
-      prevtct = $10,            
-      tctDate = $11,         
-      tecnicaldescription = $12,  
-      technicaldescremarks = $13,  
-      plusCode = $14,        
-      geojson = $15         
-      WHERE title = $16;
+      title = $1,
+      titleDate = $2,
+      surveyNumber = $3,     
+      lotNumber = $4,      
+      blkNumber = $5,       
+      area = $6,            
+      boundary = $7,        
+      ownerName = $8,      
+      oct = $9,              
+      octDate = $10,         
+      prevtct = $11,            
+      tctDate = $12,         
+      tecnicaldescription = $13,  
+      technicaldescremarks = $14,  
+      plusCode = $15,        
+      geojson = $16         
+      WHERE id = $17;
     `;
 
     // Execute the update query
     await pool.query(updateQuery, [
+      title,
       titleDate,
       surveyNumber,
       lotNumber,
@@ -451,7 +454,7 @@ app.put('/GisDetail/:title',requireAuth, async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
-      title]);
+      id]);
 
     console.log('Status field updated successfully');
     res.json({ status: 'ok', message: 'Status field updated successfully' });
@@ -461,23 +464,23 @@ app.put('/GisDetail/:title',requireAuth, async (req, res) => {
   }
 });
 
-// Update status by title
-app.put('/approved/:title', async (req, res) => {
+// Update status by id
+app.put('/approved/:id', async (req, res) => {
   try {
 
     console.log('Received request body:', req.body);
-    const { title } = req.params;
+    const { id } = req.params;
     const { status } = req.body;
 
     // Define the SQL query to update the 'status' field
     const updateQuery = `
       UPDATE title_table
       SET status = $1
-      WHERE title = $2
+      WHERE id = $2
     `;
 
     // Execute the update query
-    await pool.query(updateQuery, [status, title]);
+    await pool.query(updateQuery, [status, id]);
 
     console.log('Status field updated successfully');
     res.json({ status: 'ok', message: 'Status field updated successfully' });
