@@ -701,7 +701,41 @@ app.get("/brgycode", async function(req, res){
   }
 });
 
+//Micheal ROUTE
+app.post("/insertSMV", async (req, res) => {
+  const rpt_geo_code = req.body.rpt_geo_code;
+  const pin = req.body.pin;
+  const area = req.body.area;
 
+  try {
+    const get_title_geom = await pool.query(
+      `SELECT the_geom FROM title_table WHERE pluscode = $1`,
+      [rpt_geo_code]
+    );
+    const title_geom_rows = get_title_geom.rows;
+    const title_geom = title_geom_rows[0].the_geom;
+
+    const get_smv_code = await pool.query(
+      "SELECT mv_2017 as smv_codes FROM marketvalues WHERE st_intersects(ST_Transform(the_geom, 4326), $1) = true",
+      [title_geom]
+    );
+    const smv_code = get_smv_code.rows;
+
+    const insertData = await pool.query(
+      "INSERT INTO smv_table (rpt_geo_code, pin, smv_code, area) VALUES ($1, $2, $3, $4)",
+      [rpt_geo_code, pin, smv_code, area]
+    );
+
+    if (insertData) {
+      res.json({ success: "Data successfully saved" });
+    } else {
+      res.json({ error: "No signature uploaded" });
+    }
+  } catch (error) {
+    console.error("Error executing SQL query", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // let port = process.env.PORT || 5000;
 // app.listen(port, function() {
