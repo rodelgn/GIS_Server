@@ -705,21 +705,20 @@ app.get("/brgycode", async function(req, res){
 app.post("/insertSMV", async (req, res) => {
   const rpt_geo_code = req.body.rpt_geo_code;
   const pin = req.body.pin;
-  const area = req.body.area;
+  const smv_code = [];
+  const area = [];
 
   try {
-    const get_title_geom = await pool.query(
-      `SELECT the_geom FROM title_table WHERE pluscode = $1`,
+    const get_smv = await pool.query(
+      "SELECT ST_Area(ST_Intersection(ST_Transform(a.the_geom, 4326)::geography, ST_Transform(b.the_geom, 4326)::geography)) AS intersection_area, b.title, a.mv_2017 FROM marketvalues a, title_table b WHERE ST_Intersects (ST_Transform(a.the_geom, 4326), ST_Transform(b.the_geom, 4326)) AND b.pluscode = $1 ORDER BY mv_2017 ASC",
       [rpt_geo_code]
     );
-    const title_geom_rows = get_title_geom.rows;
-    const title_geom = title_geom_rows[0].the_geom;
+    const smv_result = get_smv.rows;
 
-    const get_smv_code = await pool.query(
-      "SELECT mv_2017 as smv_codes FROM marketvalues WHERE st_intersects(ST_Transform(the_geom, 4326), $1) = true",
-      [title_geom]
-    );
-    const smv_code = get_smv_code.rows;
+    for (var x = 0; x < smv_result.length; x++) {
+      smv_code.push(smv_result[x].mv_2017);
+      area.push(smv_result[x].intersection_area);
+    }
 
     const insertData = await pool.query(
       "INSERT INTO smv_table (rpt_geo_code, pin, smv_code, area) VALUES ($1, $2, $3, $4)",
@@ -737,8 +736,5 @@ app.post("/insertSMV", async (req, res) => {
   }
 });
 
-// let port = process.env.PORT || 5000;
-// app.listen(port, function() {
-//     console.log("Server started on port 5000");
-//   });
+
 module.exports = app;
