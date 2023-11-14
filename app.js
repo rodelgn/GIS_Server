@@ -234,6 +234,7 @@ app.get('/userDetail', requireAuth, async function (req, res) {
     console.error('Error fetching users:', error);
     res.status(500).json({ status: 'error' });
   }
+
 });
 
 
@@ -409,6 +410,7 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
+      status
   
      
     } = req.body;
@@ -432,8 +434,9 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       tecnicaldescription = $13,  
       technicaldescremarks = $14,  
       plusCode = $15,        
-      geojson = $16         
-      WHERE id = $17;
+      geojson = $16,
+      status = $17         
+      WHERE id = $18;
     `;
 
     // Execute the update query
@@ -454,6 +457,7 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
+      status,
       id]);
 
     console.log('Status field updated successfully');
