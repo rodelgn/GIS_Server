@@ -740,5 +740,13 @@ app.post("/insertSMV", async (req, res) => {
   }
 });
 
-
+app.get("/viewSMV", async function(req, res){
+  try {
+      const { rows } = await pool.query('SELECT * FROM smv_table');
+      res.json(rows);
+  } catch (error) {
+      console.error('Error fetching smv_table', error);
+      res.status(500).json({ status: "error" });
+  }
+});
 module.exports = app;
