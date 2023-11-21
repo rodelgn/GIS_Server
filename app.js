@@ -107,6 +107,7 @@ async function createTables() {
                 brgycode VARCHAR,
                 sectioncode VARCHAR,
                 parcelid VARCHAR,
+                rptgeocode VARCHAR,
                 pluscode VARCHAR,
                 title VARCHAR,
                 titledate VARCHAR,
@@ -598,6 +599,7 @@ app.post("/tmod",requireAuth, async function(req, res){
       brgyCode,
       sectionCode,
       parcelCode,
+      RPTGeoCode,
       plusCode,
       title,
       titleDate,
@@ -616,8 +618,8 @@ app.post("/tmod",requireAuth, async function(req, res){
     } = req.body;
 
     await pool.query(
-      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)',
-  [pin, districtCode,brgyCode, sectionCode, parcelCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
+      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, rptgeocode, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
+  [pin, districtCode,brgyCode, sectionCode, parcelCode, RPTGeoCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
     );
 
     console.log('PIN SAVED');
