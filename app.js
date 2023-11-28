@@ -677,27 +677,27 @@ app.put('/approvedpin/:pin', async (req, res) => {
   }
 });
 
-app.delete('/deleteByTitle/:title',requireAuth, async (req, res) => {
+app.delete('/deletePin/:pin',requireAuth, async (req, res) => {
   try {
-    const { title } = req.params;
+    const { pin } = req.params;
 
    
-    const deleteQuery = 'DELETE FROM rptas_table WHERE title = $1';
+    const deleteQuery = 'DELETE FROM rptas_table WHERE pin = $1';
 
   
-    const result = await pool.query(deleteQuery, [title]);
+    const result = await pool.query(deleteQuery, [pin]);
 
    
     if (result.rowCount === 1) {
-      console.log(`Record with title '${title}' deleted successfully`);
-      res.json({ status: 'ok', message: `Record with title '${title}' deleted successfully` });
+      console.log(`Record with title '${pin}' deleted successfully`);
+      res.json({ status: 'ok', message: `Record with PIN '${pin}' deleted successfully` });
     } else {
-      console.log(`No record found with title '${title}'`);
-      res.status(404).json({ status: 'not found', message: `No record found with title '${title}'` });
+      console.log(`No record found with title '${pin}'`);
+      res.status(404).json({ status: 'not found', message: `No record found with title '${pin}'` });
     }
   } catch (error) {
-    console.error('Error deleting record by title:', error);
-    res.status(500).json({ status: 'error', message: 'Error deleting record by title' });
+    console.error('Error deleting record by PIN:', error);
+    res.status(500).json({ status: 'error', message: 'Error deleting record by PIN' });
   }
 });
 
