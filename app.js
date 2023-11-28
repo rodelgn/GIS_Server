@@ -416,6 +416,10 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
      
     } = req.body;
 
+    const geojsonFormat = JSON.parse(geojson);
+    const geoType = geojsonFormat.geometry.type;
+    const coordinates = geojsonFormat.geometry.coordinates;
+
     // Define the SQL query to update the 'status' field
     const updateQuery = `
       UPDATE title_table
@@ -436,8 +440,9 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicaldescremarks = $14,  
       plusCode = $15,        
       geojson = $16,
-      status = $17         
-      WHERE id = $18;
+      the_geom = $17,
+      status = $18       
+      WHERE id = $19;
     `;
 
     // Execute the update query
@@ -457,7 +462,8 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicalDescription,
       technicaldescremarks,
       plusCode,
-      geojson,
+      JSON.stringify(geojsonFormat), 
+      JSON.stringify({ type: geoType, coordinates }),
       status,
       id]);
 
