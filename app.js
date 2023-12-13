@@ -33,22 +33,22 @@ function generateToken(user) {
 
 
 // CONNNECTION FOR CLOUD PG
-const pool = new Client ({
-  user: 'postgres',
-  host: '129.150.47.67',
-  database: 'postgres',
-  password: 'gismap',
-  port: 5432,
-});
+// const pool = new Client ({
+//   user: 'postgres',
+//   host: '129.150.47.67',
+//   database: 'postgres',
+//   password: 'gismap',
+//   port: 5432,
+// });
 
 //CONNNECTION FOR LOCAL PGr
-// const pool = new Client ({
-//     user: 'postgres',
-//     host: 'localhost',
-//     database: 'gis_db',
-//     password: 'dinesdayrit',
-//     port: 5432,
-// });
+const pool = new Client ({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'gis_db',
+    password: 'dinesdayrit',
+    port: 5432,
+});
 
 pool.connect ((err, client, done) => {
     if (err) {
@@ -120,9 +120,10 @@ async function createTables() {
                 oct VARCHAR,
                 octdate VARCHAR,
                 prevtct VARCHAR,
-                tctdate VARCHAR,        
+                tctdate VARCHAR,    
                 status VARCHAR,
-                username VARCHAR(255)
+                username VARCHAR(255),
+                type VARCHAR
             );
         `);
 
@@ -147,7 +148,18 @@ async function createTables() {
                 northing VARCHAR(255)
             );
         `);
-  
+            // Create the 'pin' table if it doesn't exist
+            await pool.query(`
+            CREATE TABLE IF NOT EXISTS pin_table (
+                id SERIAL PRIMARY KEY,
+                newpin VARCHAR(255),
+                pluscode VARCHAR(255),
+                prevpin VARCHAR(255),
+                prevpluscode VARCHAR(255),
+                status VARCHAR(255)
+            );
+        `);
+
 
       console.log('Tables created or already exist.');
   } catch (error) {
@@ -620,12 +632,14 @@ app.post("/tmod",requireAuth, async function(req, res){
       tct,
       tctDate,
       status,
+      username,
+      type,
      
     } = req.body;
 
     await pool.query(
-      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, rptgeocode, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
-  [pin, districtCode,brgyCode, sectionCode, parcelCode, RPTGeoCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
+      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, rptgeocode, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status, username, type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
+  [pin, districtCode,brgyCode, sectionCode, parcelCode, RPTGeoCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status, username, type]
     );
 
     console.log('PIN SAVED');
@@ -659,41 +673,54 @@ app.put('/approvedpin/:pin', async (req, res) => {
     const { pin } = req.params;
     const { status } = req.body;
 
-    // Define the SQL query to update the 'status' field in rptas_table
-    const updateQuery = `
-      UPDATE rptas_table
-      SET status = $1
-      WHERE pin = $2
-    `;
+  // Define the SQL query to update the 'status' field in rptas_table
+  const updateRptasQuery = `
+  UPDATE rptas_table
+  SET status = $1
+  WHERE pin = $2
+`;
 
-    // Execute the update query for rptas_table
-    await pool.query(updateQuery, [status, pin]);
+// Execute the update query for rptas_table
+await pool.query(updateRptasQuery, [status, pin]);
 
-    console.log('Status field in rptas_table updated successfully');
-    res.json({ status: 'ok', message: 'Status field in rptas_table updated successfully' });
-  } catch (error) {
-    console.error('Error updating status field in rptas_table:', error);
-    res.status(500).json({ status: 'error', message: 'Error updating status field in rptas_table' });
-  }
+// Define the SQL query to update the 'status' field in pin_table
+const updatePinQuery = `
+  UPDATE pin_table
+  SET status = $1
+  WHERE newpin = $2
+`;
+
+// Execute the update query for pin_table
+await pool.query(updatePinQuery, [status, pin]);
+
+console.log('Status field in rptas_table and pin_table updated successfully');
+res.json({ status: 'ok', message: 'Status field in rptas_table and pin_table updated successfully' });
+} catch (error) {
+console.error('Error updating status field:', error);
+res.status(500).json({ status: 'error', message: 'Error updating status field' });
+}
 });
+
 
 app.delete('/deletePin/:pin',requireAuth, async (req, res) => {
   try {
     const { pin } = req.params;
 
    
-    const deleteQuery = 'DELETE FROM rptas_table WHERE pin = $1';
+    // Delete from rptas_table
+    const deleteRptasQuery = 'DELETE FROM rptas_table WHERE pin = $1';
+    const rptasResult = await pool.query(deleteRptasQuery, [pin]);
 
-  
-    const result = await pool.query(deleteQuery, [pin]);
+    // Delete from pintable
+    const deletePinTableQuery = 'DELETE FROM pin_table WHERE newpin = $1';
+    const pinTableResult = await pool.query(deletePinTableQuery, [pin]);
 
-   
-    if (result.rowCount === 1) {
-      console.log(`Record with title '${pin}' deleted successfully`);
+    if (rptasResult.rowCount === 1 && pinTableResult.rowCount === 1) {
+      console.log(`Record with PIN '${pin}' deleted successfully`);
       res.json({ status: 'ok', message: `Record with PIN '${pin}' deleted successfully` });
     } else {
-      console.log(`No record found with title '${pin}'`);
-      res.status(404).json({ status: 'not found', message: `No record found with title '${pin}'` });
+      console.log(`No record found with PIN '${pin}'`);
+      res.status(404).json({ status: 'not found', message: `No record found with PIN '${pin}'` });
     }
   } catch (error) {
     console.error('Error deleting record by PIN:', error);
@@ -712,6 +739,118 @@ app.get("/brgycode", async function(req, res){
       res.status(500).json({ status: "error" });
   }
 });
+
+//PIN_table
+app.post("/pintable", async function(req, res){
+  try {
+
+    const {
+      newpin,
+      pluscode,
+      prevpin,
+      prevpluscode,
+      status,
+    } = req.body;
+
+    await pool.query(
+      'INSERT INTO pin_table (newpin, pluscode, prevpin, prevpluscode, status) VALUES ($1, $2, $3, $4, $5)',
+  [newpin,pluscode, prevpin, prevpluscode, status]
+    );
+
+    console.log('PIN Details Saved');
+    res.json({ status: "ok" });
+  } catch (error) {
+    console.error('Error saving PIN details:', error);
+    res.status(500).json({ status: "error" });
+  }
+
+});
+
+
+//Subdivide approval route
+app.put('/approvePins', async (req, res) => {
+  try {
+    const { pinsToApprove } = req.body;
+
+    // Loop through the array of pins and update the status in both tables
+    for (const pin of pinsToApprove) {
+
+      // Update pin_table
+      const updatePinQuery = `
+        UPDATE pin_table
+        SET status = 'APPROVED'
+        WHERE newpin = $1
+      `;
+      await pool.query(updatePinQuery, [pin]);
+
+      // Update rptas_table
+      const updateRptasQuery = `
+        UPDATE rptas_table
+        SET status = 'APPROVED'
+        WHERE pin = $1
+      `;
+      await pool.query(updateRptasQuery, [pin]);
+    }
+
+    res.json({ status: 'ok', message: 'Pins approved successfully' });
+  } catch (error) {
+    console.error('Error approving pins:', error);
+    res.status(500).json({ status: 'error', message: 'Error approving pins' });
+  }
+});
+
+
+//update parcels status on title_table after approval of Subdivide
+app.put('/approveTitles', async (req, res) => {
+  try {
+    const {titlesToApprove} = req.body;
+
+    for (const titlePlusCode of titlesToApprove) {
+      const updateTitleQuery = `
+        UPDATE title_table
+        SET status = 'PIN APPROVED'
+        WHERE pluscode = $1
+      `;
+      await pool.query(updateTitleQuery, [titlePlusCode]);
+    }
+    res.json({ status: 'ok', message: 'Titles approved successfully' });
+  } catch (error) {
+    console.error('Error approving titles:', error);
+    res.status(500).json({ status: 'error', message: 'Error approving titles' });
+  }
+  
+});
+//update parcel status to cancelled the old PIN
+app.put('/cancelTitle', async (req, res) => {
+  try {
+    const titleToCancel = req.body;
+
+    const updateTitleQuery = `
+      UPDATE title_table
+      SET status = 'CANCELLED'
+      WHERE pluscode = $1
+    `;
+    
+    await pool.query(updateTitleQuery, [titleToCancel.titleToCancel]);
+    
+    res.json({ status: 'ok', message: 'Title cancelled successfully' });
+  } catch (error) {
+    console.error('Error approving titles:', error);
+    res.status(500).json({ status: 'error', message: 'Error cancelling title' });
+  }
+  
+});
+//pintable get route
+app.get("/pintable", async function(req, res){
+try {
+  const { rows } = await pool.query('SELECT * FROM pin_table');
+  res.json(rows);
+} catch (error) {
+  console.error('Error fetching pin_table', error);
+  res.status(500).json({ status: "error" });
+}
+});
+
 
 //Micheal ROUTE
 app.post("/insertSMV", async (req, res) => {
@@ -757,4 +896,5 @@ app.get("/viewSMV", async function(req, res){
       res.status(500).json({ status: "error" });
   }
 });
+
 module.exports = app;
