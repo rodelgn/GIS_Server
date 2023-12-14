@@ -33,22 +33,22 @@ function generateToken(user) {
 
 
 // CONNNECTION FOR CLOUD PG
-const pool = new Client ({
-  user: 'postgres',
-  host: '129.150.47.67',
-  database: 'postgres',
-  password: 'gismap',
-  port: 5432,
-});
+// const pool = new Client ({
+//   user: 'postgres',
+//   host: '129.150.47.67',
+//   database: 'postgres',
+//   password: 'gismap',
+//   port: 5432,
+// });
 
 //CONNNECTION FOR LOCAL PGr
-// const pool = new Client ({
-//     user: 'postgres',
-//     host: 'localhost',
-//     database: 'gis_db',
-//     password: 'dinesdayrit',
-//     port: 5432,
-// });
+const pool = new Client ({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'gis_db',
+    password: 'dinesdayrit',
+    port: 5432,
+});
 
 pool.connect ((err, client, done) => {
     if (err) {
@@ -357,6 +357,7 @@ app.get('/GisDetail',requireAuth, async function(req, res) {
 
 });
 
+
 app.post("/GisDetail",requireAuth, async function(req, res){
   try {
     console.log('Received request body:', req.body);
@@ -607,6 +608,29 @@ app.get("/tmod", validateAPIKey, async function(req, res){
   }
 });
 
+//////////////////
+app.get('/tmodAPI/:pin', validateAPIKey, async function(req, res) {
+  const pin = req.params.pin;
+
+
+  console.log('received params', pin)
+  try {
+    const query = 'SELECT * FROM rptas_table WHERE pin = $1';
+    const { rows } = await pool.query(query, [pin]);
+
+    if (rows.length > 0) {
+      res.json(rows[0]); // Assuming you want to return only the first matching row
+    } else {
+      res.status(404).json({ status: 'not found', message: 'No matching record found for the provided PIN' });
+    }
+  } catch (error) {
+    console.error('Error fetching rptas_table:', error);
+    res.status(500).json({ status: 'error' });
+  }
+});
+/////////////////
+
+
 app.post("/tmod",requireAuth, async function(req, res){
   try {
     console.log('Received request body:', req.body);
@@ -766,7 +790,37 @@ app.post("/pintable", async function(req, res){
 
 });
 
+//return pins for subdivide
+app.put('/returnPins', async (req, res) => {
+  try {
+    const { pinsToReturn } = req.body;
 
+    // Loop through the array of pins and update the status in both tables
+    for (const pin of pinsToReturn) {
+
+      // Update pin_table
+      const updatePinQuery = `
+        UPDATE pin_table
+        SET status = 'RETURNED'
+        WHERE newpin = $1
+      `;
+      await pool.query(updatePinQuery, [pin]);
+
+      // Update rptas_table
+      const updateRptasQuery = `
+        UPDATE rptas_table
+        SET status = 'RETURNED'
+        WHERE pin = $1
+      `;
+      await pool.query(updateRptasQuery, [pin]);
+    }
+
+    res.json({ status: 'ok', message: 'Pins returned successfully' });
+  } catch (error) {
+    console.error('Error returning pins:', error);
+    res.status(500).json({ status: 'error', message: 'Error returning pins' });
+  }
+});
 //Subdivide approval route
 app.put('/approvePins', async (req, res) => {
   try {
