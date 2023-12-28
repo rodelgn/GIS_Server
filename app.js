@@ -612,8 +612,6 @@ app.get("/tmod", validateAPIKey, async function(req, res){
 app.get('/tmodAPI/:pin', validateAPIKey, async function(req, res) {
   const pin = req.params.pin;
 
-
-  console.log('received params', pin)
   try {
     const query = 'SELECT * FROM rptas_table WHERE pin = $1';
     const { rows } = await pool.query(query, [pin]);
@@ -781,7 +779,7 @@ app.post("/pintable", async function(req, res){
   [newpin,pluscode, prevpin, prevpluscode, status]
     );
 
-    console.log('PIN Details Saved');
+   console.log('PIN Details Saved in pin_table');
     res.json({ status: "ok" });
   } catch (error) {
     console.error('Error saving PIN details:', error);
@@ -874,6 +872,28 @@ app.put('/approveTitles', async (req, res) => {
   }
   
 });
+//update parcel status to cancelled old PIN when consolidate
+
+app.put('/cancelTitleForConsolidate', async (req, res) => {
+  try {
+    const { titleToCancel } = req.body;
+
+    for (const titlePlusCode of titleToCancel) {
+      const updateTitleQuery = `
+        UPDATE title_table
+        SET status = 'CANCELLED'
+        WHERE pluscode = $1
+      `;
+    
+    await pool.query(updateTitleQuery, [titlePlusCode]);
+    }
+    res.json({ status: 'ok', message: 'Titles cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling titles:', error);
+    res.status(500).json({ status: 'error', message: 'Error cancelling title' });
+  }
+});
+
 //update parcel status to cancelled the old PIN
 app.put('/cancelTitle', async (req, res) => {
   try {
